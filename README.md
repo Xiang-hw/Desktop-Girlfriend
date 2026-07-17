@@ -115,7 +115,7 @@ Agent 应先检查环境，再建立项目、处理原图、生成动作、检�
 
 ## 当前公开状态
 
-本目录已完成首次发布前的本地测试、公开构建和文件清单审查，尚未创建远程 GitHub 仓库。推送后还需要等待首次 GitHub Actions 通过，并从 Release 下载公开构建进行一次独立启动验证。
+源码已发布到 [Taylor154/OnePic-Desktop-Pet](https://github.com/Taylor154/OnePic-Desktop-Pet)，首次 GitHub Actions 测试已经通过。发布 Windows ZIP 后还应从 Release 下载一次，并在另一目录执行独立启动验证。
 
 ## 授权
 
