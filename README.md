@@ -115,7 +115,7 @@ Agent 应先检查环境，再建立项目、处理原图、生成动作、检�
 
 ## 当前公开状态
 
-源码已发布到 [Taylor154/OnePic-Desktop-Pet](https://github.com/Taylor154/OnePic-Desktop-Pet)，首次 GitHub Actions 测试已经通过。发布 Windows ZIP 后还应从 Release 下载一次，并在另一目录执行独立启动验证。
+源码已发布到 [Taylor154/OnePic-Desktop-Pet](https://github.com/Taylor154/OnePic-Desktop-Pet)，GitHub Actions 测试已经通过。[v0.1.0 Release](https://github.com/Taylor154/OnePic-Desktop-Pet/releases/tag/v0.1.0) 已提供 Windows ZIP，并已完成公开下载、SHA-256 核对、解压和独立启动验证。
 
 ## 授权
 
