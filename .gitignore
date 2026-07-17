@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 虚拟环境和构建产物
+.venv/
+build/
+dist/
+*.egg-info/
+
+# 编辑器和系统文件
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 用户私有素材：保留说明文件，但不提交图片
+user_assets/*
+!user_assets/README.md
+
+# 本地日志和临时输出
+*.log
+*.tmp

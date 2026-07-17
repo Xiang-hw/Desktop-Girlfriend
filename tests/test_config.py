@@ -1,0 +1,83 @@
+"""
+本模块测试桌面宠物配置的合并、范围校验、损坏回退和原子保存行为。
+
+测试只使用 pytest 提供的临时目录，不写入真实用户配置目录，不修改项目默认配置，
+也不创建 GUI 或网络请求。
+"""
+
+import json
+
+from onepic_desktop_pet.config import PetSettings, load_settings, save_settings
+
+
+def test_load_settings_merges_position_and_user_selected_size(tmp_path) -> None:
+    default_path = tmp_path / "default.json"
+    override_path = tmp_path / "override.json"
+    default_path.write_text(
+        json.dumps({"display_height": 280, "movement_step": 3}),
+        encoding="utf-8",
+    )
+    override_path.write_text(
+        json.dumps(
+            {
+                "display_height": 9999,
+                "movement_step": 0,
+                "start_x": 25,
+                "start_y": 40,
+                "unknown": 1,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    settings = load_settings(default_path, override_path)
+
+    assert settings.display_height == 600
+    assert settings.movement_step == 3
+    assert settings.start_x == 25
+    assert settings.start_y == 40
+    assert not hasattr(settings, "unknown")
+
+
+def test_broken_user_config_falls_back_to_defaults(tmp_path) -> None:
+    default_path = tmp_path / "default.json"
+    override_path = tmp_path / "override.json"
+    default_path.write_text('{"movement_step": 5}', encoding="utf-8")
+    override_path.write_text("not-json", encoding="utf-8")
+
+    assert load_settings(default_path, override_path).movement_step == 5
+
+
+def test_animation_timing_is_limited_to_safe_ranges(tmp_path) -> None:
+    """动画节奏参数过大或过小时应被限制，避免计时器异常。"""
+
+    default_path = tmp_path / "default.json"
+    default_path.write_text(
+        json.dumps({"walk_frame_interval_ms": 1, "turn_pause_ms": 9999}),
+        encoding="utf-8",
+    )
+
+    settings = load_settings(default_path, tmp_path / "missing.json")
+
+    assert settings.walk_frame_interval_ms == 50
+    assert settings.turn_pause_ms == 1200
+
+
+def test_default_inactivity_uses_five_and_ten_minutes() -> None:
+    """默认无互动阈值应为五分钟坐下、十分钟睡觉。"""
+
+    settings = PetSettings()
+    assert settings.inactive_sit_ms == 300000
+    assert settings.inactive_sleep_ms == 600000
+
+
+def test_save_settings_writes_json(tmp_path) -> None:
+    path = tmp_path / "nested" / "settings.json"
+    saved = save_settings(PetSettings(start_x=12, start_y=34), path)
+
+    data = json.loads(saved.read_text(encoding="utf-8"))
+    assert data["start_x"] == 12
+    assert data["start_y"] == 34
+    assert data["display_height"] == 220
+    assert set(data) == {"display_height", "start_x", "start_y"}
+    assert not path.with_suffix(".json.tmp").exists()

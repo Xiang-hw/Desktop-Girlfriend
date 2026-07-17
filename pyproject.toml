@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "onepic-desktop-pet"
+version = "0.1.0"
+description = "上传一张角色图片，让 Agent 帮助制作可互动的 Windows 桌面宠物。"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { file = "LICENSE" }
+dependencies = [
+    "PySide6>=6.8,<7",
+    "Pillow>=10,<13",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<9",
+    "PyInstaller>=6,<7",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
