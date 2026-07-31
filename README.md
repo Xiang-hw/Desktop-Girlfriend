@@ -2,7 +2,7 @@
 
 上传一张角色图片，让 Agent 帮助生成、配置并优化一个可以在 Windows 桌面上跑动、休息、互动和自拍的桌面宠物。
 
-当前 `v0.1.0` 是从已经可运行的 Python + PySide6 桌宠整理出的开源候选版本。仓库暂时保留一套演示角色动作，后续将继续完善“一张图到完整动作”的 Agent 自动执行流程。
+当前项目是仅加载已确认专属女孩素材的私有版本，公开演示角色及其动作素材已经移除。
 
 ## 当前功能
 
@@ -25,10 +25,16 @@
 ```powershell
 .\scripts\check_environment.ps1
 .\scripts\setup_environment.ps1
-.\scripts\run.ps1
+.\Start-CodexPet.ps1
 ```
 
 环境脚本只在项目内创建 `.venv` 并安装依赖，不会自动安装 Python、Git，不会修改系统环境变量，也不会申请管理员权限。缺少 Python 3.12 时会停止并给出提示。
+
+`Start-CodexPet.ps1` 是当前私有版的推荐入口。它会安静启动桌宠本体；如果 CodexPet 已经在运行，则不会重复启动。需要强制重启时运行：
+
+```powershell
+.\Start-CodexPet.ps1 -Restart
+```
 
 ## 从一张图片开始
 
@@ -65,11 +71,7 @@
 
 没有完成两个确认，程序不会加载私有角色，个人版本打包也会被阻止。
 
-更换角色后可以生成八种表情符号联系表进行视觉检查：
-
-```powershell
-.\.venv\Scripts\python.exe .\tools\render_emotion_preview.py
-```
+更换角色后应直接启动私有版本，逐项检查全部表情和互动动作。
 
 ## 自定义自拍照片
 
@@ -90,11 +92,8 @@ user_assets/selfie.jpeg
 .\scripts\build.ps1
 ```
 
-默认打包生成不含任何 `user_assets/` 的公开演示版本。只有角色和走路均确认后，才能显式构建个人版本：
-
-```powershell
-.\scripts\build.ps1 -IncludeUserAssets
-```
+项目仅支持私有版本打包。角色和走路均确认后运行 `.\scripts\build.ps1`，构建结果会包含
+`user_assets/`。
 
 打包结果位于：
 
@@ -111,16 +110,15 @@ Agent 应先检查环境，再建立项目、处理原图、生成动作、检�
 - [素材规范](docs/素材规范.md)
 - [角色与走路验收清单](docs/角色与走路验收清单.md)
 - [隐私说明](docs/隐私说明.md)
-- [GitHub 发布清单](docs/发布清单.md)
+- [私有分发清单](docs/发布清单.md)
 
-## 当前公开状态
+## 当前状态
 
-源码已发布到 [Taylor154/OnePic-Desktop-Pet](https://github.com/Taylor154/OnePic-Desktop-Pet)，GitHub Actions 测试已经通过。[v0.1.0 Release](https://github.com/Taylor154/OnePic-Desktop-Pet/releases/tag/v0.1.0) 已提供 Windows ZIP，并已完成公开下载、SHA-256 核对、解压和独立启动验证。
+本工作区已经改为私有专用版，只加载 `user_assets/pet/manifest.json`，不再提供或回退到公开演示角色。
 
 ## 授权
 
 - 程序代码和项目文档：MIT License；
-- `assets/` 中的公开演示美术素材：CC BY-NC 4.0；
-- `user_assets/`：不属于公开仓库内容，除非素材所有者另行明确授权。
+- `user_assets/`：本机私有素材，不属于 MIT License 范围，未经素材所有者明确授权不得公开。
 
 详细范围和署名方式见 [素材授权说明](ASSETS_LICENSE.md)。
