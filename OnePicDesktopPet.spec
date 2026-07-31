@@ -1,13 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-import os
-from pathlib import Path
-
-
-datas = [("assets", "assets"), ("config", "config")]
-private_assets = Path("user_assets")
-if os.environ.get("ONEPIC_INCLUDE_USER_ASSETS") == "1" and private_assets.exists():
-    datas.append(("user_assets", "user_assets"))
+datas = [("config", "config"), ("user_assets", "user_assets")]
 
 a = Analysis(
     ["main.py"],
@@ -40,7 +33,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=["assets\\icons\\pet.png"],
+    icon=["user_assets\\pet\\icon.png"],
 )
 coll = COLLECT(
     exe,

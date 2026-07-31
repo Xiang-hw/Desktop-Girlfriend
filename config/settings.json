@@ -1,8 +1,8 @@
 {
-  "display_height": 220,
+  "display_height": 300,
   "movement_interval_ms": 16,
-  "movement_step": 1,
-  "walk_frame_interval_ms": 90,
+  "movement_step": 0.55,
+  "walk_frame_interval_ms": 140,
   "turn_pause_ms": 240,
   "idle_min_ms": 3000,
   "idle_max_ms": 7000,

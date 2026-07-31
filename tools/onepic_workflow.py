@@ -325,7 +325,7 @@ def create_walk_review(manifest_path: Path) -> dict[str, Any]:
         preview,
         save_all=True,
         append_images=frames[1:],
-        duration=90,
+        duration=140,
         loop=0,
         optimize=False,
     )

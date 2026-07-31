@@ -194,7 +194,9 @@ def draw_emotion_effect(
     elif effect == "flash":
         _draw_sparkle(painter, QPointF(width * 0.34, height * 0.56), size * 0.88)
     elif effect == "sweat":
-        painter.setPen(QPen(QColor(255, 255, 255, 220), max(1.5, size * 0.10)))
+        size *= 0.58
+        center = QPointF(width * 0.78, height * 0.18 + float_y * 0.45)
+        painter.setPen(QPen(QColor(255, 255, 255, 210), max(1.2, size * 0.10)))
         painter.setBrush(QColor(80, 170, 235, 240))
         drop = QPainterPath()
         drop.moveTo(center.x(), center.y() - size)

@@ -12,7 +12,6 @@ import os
 import time
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-os.environ.setdefault("ONEPIC_USE_DEMO_ASSETS", "1")
 
 from PySide6.QtCore import QPoint, QRect
 from PySide6.QtWidgets import QApplication
@@ -105,7 +104,7 @@ def test_walk_vertical_offset_follows_footfall_frames() -> None:
         window._animation_tick()
         offsets.append(window.label.y())
 
-    assert offsets == [3, 5, 2, 0]
+    assert offsets == [1, 2, 1, 0]
     window.close()
     window.deleteLater()
     app.processEvents()
@@ -159,7 +158,7 @@ def test_walk_motion_curve_avoids_freeze_and_balances_both_steps() -> None:
 
 
 def test_drag_state_uses_dedicated_suspended_animation() -> None:
-    """拖拽状态应加载三帧悬空素材，而不是回退到待机站立。"""
+    """私有拖拽状态应加载专用悬空素材，而不是回退到待机站立。"""
 
     app, window = _create_window()
     window.set_state(PetState.DRAG)
@@ -168,6 +167,7 @@ def test_drag_state_uses_dedicated_suspended_animation() -> None:
     assert display_state is PetState.DRAG
     assert len(window._pixmaps[PetState.DRAG]) == 3
     assert window.animation_timer.isActive()
+
     window.close()
     window.deleteLater()
     app.processEvents()
@@ -221,6 +221,42 @@ def test_inactivity_progresses_from_sit_to_sleep() -> None:
     window._state_timeout()
     assert window.state is PetState.SLEEP
     assert not window._sleep_after_sit
+    window.close()
+    window.deleteLater()
+    app.processEvents()
+
+
+def test_manual_controls_trigger_sit_and_sleep_via_transition() -> None:
+    """控制菜单应能手动坐下，并通过坐姿过渡进入睡眠。"""
+
+    app, window = _create_window()
+
+    window.trigger_sit()
+    assert window.state is PetState.SIT
+    assert window.state_timer.isActive()
+
+    window.trigger_sleep()
+    assert window.state is PetState.SIT
+    assert window._sleep_after_sit
+    window._state_timeout()
+    assert window.state is PetState.SLEEP
+
+    window.close()
+    window.deleteLater()
+    app.processEvents()
+
+
+def test_context_menu_exposes_manual_sit_and_sleep_actions() -> None:
+    """右键控制菜单应直接提供坐下和睡觉按钮。"""
+
+    app, window = _create_window()
+    menu = window._build_context_menu()
+    labels = {action.text() for action in menu.actions()}
+
+    assert "坐下" in labels
+    assert "睡觉" in labels
+
+    menu.deleteLater()
     window.close()
     window.deleteLater()
     app.processEvents()
@@ -313,11 +349,11 @@ def test_head_click_increases_affinity_and_repeated_body_poke_annoys() -> None:
     app.processEvents()
 
 
-def test_selfie_completion_shows_photo_bubble() -> None:
-    """没有用户原图时不得用生成动画末帧冒充自拍照片。"""
+def test_selfie_completion_does_not_show_photo_bubble() -> None:
+    """手机自拍完成后只播放角色反应，不弹出原始照片。"""
 
     app, window = _create_window()
-    window._selfie_photo = type(window._selfie_photo)()
+    window._selfie_photo = window._pixmaps[PetState.SELFIE][-1]
     window.set_state(PetState.SELFIE)
     window._finish_interaction()
     app.processEvents()

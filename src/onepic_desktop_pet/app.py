@@ -5,7 +5,7 @@
 - 创建或复用 QApplication；
 - 在创建应用前启用适合不同显示器缩放比例的高 DPI 舍入策略；
 - 创建 PetWindow 和 QSystemTrayIcon；
-- 连接显示、隐藏、暂停跑动、互动和退出动作；
+- 连接显示、隐藏、暂停跑动、坐下、睡觉、互动和退出动作；
 - 退出前将窗口位置和用户选择的尺寸写入设置文件；
 - 为自动验证提供定时退出的 smoke-test 参数。
 
@@ -51,7 +51,7 @@ class DesktopPetApplication:
     def _create_tray(self) -> QSystemTrayIcon:
         """创建系统托盘图标及其操作菜单。"""
 
-        icon = QIcon(str(resource_path("assets/icons/pet.png")))
+        icon = QIcon(str(resource_path("user_assets/pet/icon.png")))
         tray = QSystemTrayIcon(icon, self.qt_app)
         tray.setToolTip("OnePic Desktop Pet")
         menu = QMenu()
@@ -67,6 +67,14 @@ class DesktopPetApplication:
         selfie_action = QAction("自拍一下", menu)
         selfie_action.triggered.connect(self.window.trigger_selfie)
         menu.addAction(selfie_action)
+
+        sit_action = QAction("坐下", menu)
+        sit_action.triggered.connect(self.window.trigger_sit)
+        menu.addAction(sit_action)
+
+        sleep_action = QAction("睡觉", menu)
+        sleep_action.triggered.connect(self.window.trigger_sleep)
+        menu.addAction(sleep_action)
 
         pause_action = QAction("暂停/恢复跑动", menu)
         pause_action.triggered.connect(

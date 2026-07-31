@@ -30,7 +30,6 @@ Agent 快速定位：
 from __future__ import annotations
 
 import json
-import os
 import random
 import time
 from collections import OrderedDict, deque
@@ -173,26 +172,16 @@ class PetWindow(QWidget):
     def _load_pixmaps(self) -> dict[PetState, list[QPixmap]]:
         """根据素材清单加载各状态帧序列并验证完整性。"""
 
-        manifest_path = resource_path("assets/pet/manifest.json")
-        if os.environ.get("ONEPIC_USE_DEMO_ASSETS") == "1":
-            return self._load_manifest_pixmaps(manifest_path)
-        try:
-            custom_manifest = resource_path("user_assets/pet/manifest.json")
-        except FileNotFoundError:
-            pass
-        else:
-            if not character_is_approved(load_workflow()):
-                raise WorkflowError(
-                    "检测到私有宠物素材，但标准人物尚未确认；拒绝静默回退到演示角色。"
-                )
-            manifest_path = custom_manifest
+        manifest_path = resource_path("user_assets/pet/manifest.json")
+        if not character_is_approved(load_workflow()):
+            raise WorkflowError("私有宠物的标准人物尚未确认，无法加载角色素材。")
         return self._load_manifest_pixmaps(manifest_path)
 
     def _load_manifest_pixmaps(
         self,
         manifest_path: Path,
     ) -> dict[PetState, list[QPixmap]]:
-        """从指定清单加载帧；测试可借此固定使用公开演示素材。"""
+        """从指定私有清单加载并验证全部动作帧。"""
 
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         animations: dict[str, list[str]] = manifest["animations"]
@@ -420,10 +409,18 @@ class PetWindow(QWidget):
                 self._animation_finished = None
                 if callback is not None:
                     QTimer.singleShot(0, callback)
-        elif display_state in (PetState.SIT, PetState.SLEEP, PetState.SELFIE):
+        elif display_state in (
+            PetState.SIT,
+            PetState.SLEEP,
+            PetState.SELFIE,
+        ):
             self._frame_index = min(self._frame_index + 1, len(frames) - 1)
             if self._frame_index == len(frames) - 1:
                 self.animation_timer.stop()
+                callback = self._animation_finished
+                self._animation_finished = None
+                if callback is not None:
+                    QTimer.singleShot(0, callback)
         else:
             self._frame_index = (self._frame_index + 1) % len(frames)
         self._apply_frame_offset(display_state)
@@ -438,7 +435,7 @@ class PetWindow(QWidget):
 
         if display_state is PetState.WALK:
             x_offsets = (6, 6, 6, 6, 6, 6, 6, 6)
-            y_offsets = (3, 5, 2, 0, 3, 5, 2, 0)
+            y_offsets = (1, 2, 1, 0, 1, 2, 1, 0)
             phase = self._frame_index % len(y_offsets)
             self.label.move(x_offsets[phase], y_offsets[phase])
 
@@ -757,6 +754,26 @@ class PetWindow(QWidget):
         self._record_user_interaction()
         self._show_emotion(PetState.SELFIE, 2600)
 
+    def trigger_sit(self) -> None:
+        """由控制菜单让宠物自然坐下，并保持一段可观察时间。"""
+
+        if self.dragging:
+            return
+        self._record_user_interaction()
+        self.interaction_timer.stop()
+        self.state_timer.stop()
+        self._schedule(self._decision(PetState.SIT, 30000))
+
+    def trigger_sleep(self) -> None:
+        """由控制菜单先播放坐下过渡，再进入睡眠。"""
+
+        if self.dragging:
+            return
+        self._record_user_interaction()
+        self.interaction_timer.stop()
+        self.state_timer.stop()
+        self._schedule_sleep_via_sit()
+
     def _interaction_zone(self, point: QPoint) -> str:
         """按窗口内相对位置划分头顶、脸部、身体和相机互动区域。"""
 
@@ -891,9 +908,25 @@ class PetWindow(QWidget):
         """结束互动并恢复自主待机。"""
 
         if not self.dragging:
-            if self.state is PetState.SELFIE:
-                self._show_photo_bubble()
             self._schedule(self.behavior.initial_idle())
+
+    def _frame_anchor_geometry(
+        self,
+        state: PetState,
+        frame_index: int,
+    ) -> tuple[float, float, float, object]:
+        """返回帧在标签中的缩放、居中偏移和可见边界。"""
+
+        pixmap = self._pixmaps[state][min(frame_index, len(self._pixmaps[state]) - 1)]
+        scale = min(
+            self.label.width() / max(1, pixmap.width()),
+            self.label.height() / max(1, pixmap.height()),
+        )
+        rendered_width = pixmap.width() * scale
+        rendered_height = pixmap.height() * scale
+        offset_x = self.label.x() + (self.label.width() - rendered_width) / 2
+        offset_y = self.label.y() + (self.label.height() - rendered_height) / 2
+        return scale, offset_x, offset_y, QRegion(pixmap.mask()).boundingRect()
 
     def _build_context_menu(self) -> QMenu:
         """构建宠物窗口的右键菜单。"""
@@ -908,6 +941,12 @@ class PetWindow(QWidget):
         selfie_action = QAction("自拍一下", self)
         selfie_action.triggered.connect(self.trigger_selfie)
         menu.addAction(selfie_action)
+        sit_action = QAction("坐下", self)
+        sit_action.triggered.connect(self.trigger_sit)
+        menu.addAction(sit_action)
+        sleep_action = QAction("睡觉", self)
+        sleep_action.triggered.connect(self.trigger_sleep)
+        menu.addAction(sleep_action)
         mood_action = QAction(
             "心情："
             f"亲密 {self.mood.affinity} · "
@@ -918,7 +957,7 @@ class PetWindow(QWidget):
         mood_action.setEnabled(False)
         menu.addAction(mood_action)
         size_menu = menu.addMenu("宠物大小")
-        for label, height in (("小（180）", 180), ("标准（220）", 220), ("大（280）", 280)):
+        for label, height in (("小（180）", 180), ("标准（300）", 300), ("大（380）", 380)):
             size_action = QAction(label, self)
             size_action.setCheckable(True)
             size_action.setChecked(self.settings.display_height == height)
@@ -978,7 +1017,7 @@ class PetWindow(QWidget):
             if not self.dragging:
                 event.accept()
                 return
-            target = event.globalPosition().toPoint() - self._drag_offset
+            target = current_global - self._drag_offset
             self.move(self._constrained_position(target))
             event.accept()
             return
@@ -992,6 +1031,8 @@ class PetWindow(QWidget):
             if self.dragging:
                 self.dragging = False
                 self._press_pending = False
+                self.state_timer.stop()
+                self.interaction_timer.stop()
                 self._show_emotion(PetState.SURPRISED, 1100)
             elif self._press_pending:
                 self._press_pending = False
